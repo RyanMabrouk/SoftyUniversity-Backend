@@ -1,51 +1,42 @@
 import { Module } from '@nestjs/common';
-import { UsersModule } from './users/users.module';
-import { FilesModule } from './files/files.module';
+import { UsersModule } from './routes/users/users.module';
+import { FilesModule } from './routes/files/files.module';
 import { AuthModule } from './auth/auth.module';
 import databaseConfig from './database/config/database.config';
 import authConfig from './auth/config/auth.config';
 import appConfig from './config/app.config';
-import mailConfig from './mail/config/mail.config';
-import fileConfig from './files/config/file.config';
-import facebookConfig from './auth-facebook/config/facebook.config';
-import googleConfig from './auth-google/config/google.config';
-import twitterConfig from './auth-twitter/config/twitter.config';
-import appleConfig from './auth-apple/config/apple.config';
+import mailConfig from './shared/services/mail/config/mail.config';
+import fileConfig from './routes/files/config/file.config';
 import path from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthAppleModule } from './auth-apple/auth-apple.module';
-import { AuthFacebookModule } from './auth-facebook/auth-facebook.module';
-import { AuthGoogleModule } from './auth-google/auth-google.module';
-import { AuthTwitterModule } from './auth-twitter/auth-twitter.module';
 import { I18nModule } from 'nestjs-i18n/dist/i18n.module';
 import { HeaderResolver } from 'nestjs-i18n';
 import { TypeOrmConfigService } from './database/typeorm-config.service';
-import { MailModule } from './mail/mail.module';
-import { HomeModule } from './home/home.module';
+import { MailModule } from './shared/services/mail/mail.module';
+import { HomeModule } from './routes/home/home.module';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { AllConfigType } from './config/config.type';
-import { SessionModule } from './session/session.module';
-import { MailerModule } from './mailer/mailer.module';
+import { SessionModule } from './routes/session/session.module';
+import { MailerModule } from './shared/services/mailer/mailer.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MongooseConfigService } from './database/mongoose-config.service';
 import { DatabaseConfig } from './database/config/database-config.type';
-
+import { ProjectsModule } from './routes/projects/projects.module';
+import { TasksModule } from './routes/tasks/tasks.module';
+import { ChatModule } from './routes/chat/chat.module';
+import { MessageModule } from './routes/messages/message.module';
+import { NotificationModule } from './routes/notifications/notifications.module';
+import { MessagesSocketModule } from './routes/messages/socket/messages-socket.module';
+import { NotificationsSocketModule } from './routes/notifications/socket/notifications-socket.module';
+//import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
+//import { APP_INTERCEPTOR } from '@nestjs/core';
 @Module({
   imports: [
+    // CacheModule.register(),
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [
-        databaseConfig,
-        authConfig,
-        appConfig,
-        mailConfig,
-        fileConfig,
-        facebookConfig,
-        googleConfig,
-        twitterConfig,
-        appleConfig,
-      ],
+      load: [databaseConfig, authConfig, appConfig, mailConfig, fileConfig],
       envFilePath: ['.env'],
     }),
     (databaseConfig() as DatabaseConfig).isDocumentDatabase
@@ -63,7 +54,10 @@ import { DatabaseConfig } from './database/config/database-config.type';
         fallbackLanguage: configService.getOrThrow('app.fallbackLanguage', {
           infer: true,
         }),
-        loaderOptions: { path: path.join(__dirname, '/i18n/'), watch: true },
+        loaderOptions: {
+          path: path.join(__dirname, '/shared/i18n/'),
+          watch: true,
+        },
       }),
       resolvers: [
         {
@@ -84,14 +78,23 @@ import { DatabaseConfig } from './database/config/database-config.type';
     UsersModule,
     FilesModule,
     AuthModule,
-    AuthFacebookModule,
-    AuthGoogleModule,
-    AuthTwitterModule,
-    AuthAppleModule,
     SessionModule,
     MailModule,
     MailerModule,
     HomeModule,
+    ProjectsModule,
+    TasksModule,
+    ChatModule,
+    MessageModule,
+    NotificationModule,
+    MessagesSocketModule,
+    NotificationsSocketModule,
   ],
+  /* providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheInterceptor,
+    },
+  ],*/
 })
 export class AppModule {}

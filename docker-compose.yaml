@@ -36,6 +36,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - ${APP_PORT}:${APP_PORT}
+    depends_on:
+      - postgres
+      - maildev
+      # Uncomment to use redis
+      # - redis
 
 volumes:
   boilerplate-db:

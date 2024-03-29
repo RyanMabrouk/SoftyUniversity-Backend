@@ -11,22 +11,22 @@ import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
 import { AuthEmailLoginDto } from './dto/auth-email-login.dto';
 import { AuthUpdateDto } from './dto/auth-update.dto';
-import { RoleEnum } from 'src/roles/roles.enum';
-import { StatusEnum } from 'src/statuses/statuses.enum';
+import { RoleEnum } from 'src/routes/roles/roles.enum';
+import { StatusEnum } from 'src/shared/statuses/statuses.enum';
 import { AuthProvidersEnum } from './auth-providers.enum';
-import { SocialInterface } from '../social/interfaces/social.interface';
+import { SocialInterface } from '../shared/social/interfaces/social.interface';
 import { AuthRegisterLoginDto } from './dto/auth-register-login.dto';
-import { MailService } from 'src/mail/mail.service';
+import { MailService } from 'src/shared/services/mail/mail.service';
 import { NullableType } from '../utils/types/nullable.type';
-import { LoginResponseType } from './types/login-response.type';
+import { LoginResponseType } from './types/response.type';
 import { ConfigService } from '@nestjs/config';
 import { AllConfigType } from 'src/config/config.type';
 import { JwtRefreshPayloadType } from './strategies/types/jwt-refresh-payload.type';
 import { JwtPayloadType } from './strategies/types/jwt-payload.type';
-import { User } from 'src/users/domain/user';
-import { Session } from 'src/session/domain/session';
-import { UsersService } from 'src/users/users.service';
-import { SessionService } from 'src/session/session.service';
+import { User } from 'src/routes/users/domain/user';
+import { Session } from 'src/routes/session/domain/session';
+import { UsersService } from 'src/routes/users/users.service';
+import { SessionService } from 'src/routes/session/session.service';
 
 @Injectable()
 export class AuthService {
@@ -217,8 +217,9 @@ export class AuthService {
     const user = await this.usersService.create({
       ...dto,
       email: dto.email,
+      provider: AuthProvidersEnum.email,
       role: {
-        id: RoleEnum.user,
+        id: Number(dto.roleId),
       },
       status: {
         id: StatusEnum.inactive,
@@ -399,13 +400,14 @@ export class AuthService {
     userJwtPayload: JwtPayloadType,
     userDto: AuthUpdateDto,
   ): Promise<NullableType<User>> {
+    console.log('🚀 ~ AuthService ~ userDto:', userDto);
     if (userDto.password) {
       if (!userDto.oldPassword) {
         throw new HttpException(
           {
             status: HttpStatus.UNPROCESSABLE_ENTITY,
             errors: {
-              oldPassword: 'missingOldPassword',
+              oldPassword: 'Missing old password',
             },
           },
           HttpStatus.UNPROCESSABLE_ENTITY,
@@ -415,13 +417,14 @@ export class AuthService {
       const currentUser = await this.usersService.findOne({
         id: userJwtPayload.id,
       });
+      console.log('🚀 ~ AuthService ~ currentUser:', currentUser);
 
       if (!currentUser) {
         throw new HttpException(
           {
             status: HttpStatus.UNPROCESSABLE_ENTITY,
             errors: {
-              user: 'userNotFound',
+              user: 'User not found',
             },
           },
           HttpStatus.UNPROCESSABLE_ENTITY,
@@ -433,7 +436,7 @@ export class AuthService {
           {
             status: HttpStatus.UNPROCESSABLE_ENTITY,
             errors: {
-              oldPassword: 'incorrectOldPassword',
+              oldPassword: 'Incorrect old password',
             },
           },
           HttpStatus.UNPROCESSABLE_ENTITY,
@@ -450,7 +453,7 @@ export class AuthService {
           {
             status: HttpStatus.UNPROCESSABLE_ENTITY,
             errors: {
-              oldPassword: 'incorrectOldPassword',
+              oldPassword: 'Incorrect old password',
             },
           },
           HttpStatus.UNPROCESSABLE_ENTITY,
@@ -464,12 +467,10 @@ export class AuthService {
         });
       }
     }
-
-    await this.usersService.update(userJwtPayload.id, userDto);
-
-    return this.usersService.findOne({
-      id: userJwtPayload.id,
-    });
+    console.log('🚀 ~ AuthService ~ success:');
+    const updated = await this.usersService.update(userJwtPayload.id, userDto);
+    console.log('🚀 ~ AuthService ~ updated:', updated);
+    return updated;
   }
 
   async refreshToken(
